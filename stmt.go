@@ -7,6 +7,7 @@ package odbc
 import (
 	"database/sql/driver"
 	"errors"
+	"strings"
 	"sync"
 
 	"github.com/csgura/altiodbc/api"
@@ -77,6 +78,21 @@ func (s *Stmt) Exec(args []driver.Value) (driver.Result, error) {
 			break
 		}
 	}
+	if sumRowCount > 0 {
+		for i, a := range args {
+			switch d := a.(type) {
+			case OutputBind[int]:
+				b := s.os.Parameters[i].Data.(*int64)
+				d.Success(int(*b))
+
+			case OutputBind[string]:
+				b := s.os.Parameters[i].Data.([]uint16)
+				// fmt.Printf("stored len = %d, b = %x\n", s.Parameters[i].StrLen_or_IndPtr, b)
+				d.Success(strings.TrimRight(string(utf16toutf8(b)), " "))
+			}
+		}
+	}
+
 	return &Result{rowCount: sumRowCount}, nil
 }
 

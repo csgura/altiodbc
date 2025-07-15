@@ -8,7 +8,6 @@ import (
 	"database/sql/driver"
 	"errors"
 	"fmt"
-	"strings"
 	"sync"
 	"time"
 	"unsafe"
@@ -116,18 +115,7 @@ func (s *ODBCStmt) Exec(args []driver.Value, conn *Conn) error {
 		time.Sleep(10 * time.Microsecond)
 	}
 	ret := api.SQLExecute(s.h)
-	for i, a := range args {
-		switch d := a.(type) {
-		case OutputBind[int]:
-			b := s.Parameters[i].Data.(*int64)
-			d.Success(int(*b))
 
-		case OutputBind[string]:
-			b := s.Parameters[i].Data.([]uint16)
-			// fmt.Printf("stored len = %d, b = %x\n", s.Parameters[i].StrLen_or_IndPtr, b)
-			d.Success(strings.TrimRight(string(utf16toutf8(b)), " "))
-		}
-	}
 	if ret == api.SQL_NO_DATA {
 		// success but no data to report
 		return nil
