@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+//go:build (darwin || linux || freebsd) && cgo
 // +build darwin linux freebsd
 // +build cgo
 
@@ -49,7 +50,8 @@ const (
 	SQL_NULL_HDBC          = uintptr(C.SQL_NULL_HDBC)
 	SQL_NULL_HSTMT         = uintptr(C.SQL_NULL_HSTMT)
 
-	SQL_PARAM_INPUT = C.SQL_PARAM_INPUT
+	SQL_PARAM_INPUT  = C.SQL_PARAM_INPUT
+	SQL_PARAM_OUTPUT = 4
 
 	SQL_NULL_DATA    = C.SQL_NULL_DATA
 	SQL_DATA_AT_EXEC = C.SQL_DATA_AT_EXEC

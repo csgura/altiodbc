@@ -167,3 +167,22 @@ func namedValueToValue(named []driver.NamedValue) ([]driver.Value, error) {
 	}
 	return dargs, nil
 }
+
+type OutputBind[T any] interface {
+	ColumnSize() int
+	Success(T)
+}
+
+func (d *Conn) CheckNamedValue(v *driver.NamedValue) error {
+	switch v.Value.(type) {
+	case OutputBind[int], OutputBind[string]:
+		return nil
+	}
+
+	nv, err := driver.DefaultParameterConverter.ConvertValue(v.Value)
+	if err != nil {
+		return err
+	}
+	v.Value = nv
+	return nil
+}

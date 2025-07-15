@@ -76,3 +76,7 @@ func init() {
 	}
 	sql.Register("odbc", &drv)
 }
+
+func GetDriver() *Driver {
+	return &drv
+}

@@ -40,6 +40,7 @@ func (p *Parameter) BindValue(h api.SQLHSTMT, idx int, v driver.Value, conn *Con
 	var buflen api.SQLLEN
 	var plen *api.SQLLEN
 	var buf unsafe.Pointer
+	var inout api.SQLSMALLINT = api.SQL_PARAM_INPUT
 	switch d := v.(type) {
 	case nil:
 		ctype = api.SQL_C_WCHAR
@@ -80,6 +81,25 @@ func (p *Parameter) BindValue(h api.SQLHSTMT, idx int, v driver.Value, conn *Con
 			// https://docs.microsoft.com/en-us/sql/odbc/microsoft/microsoft-access-data-types
 			sqltype = api.SQL_WLONGVARCHAR
 		}
+	case OutputBind[string]:
+		ctype = api.SQL_C_WCHAR
+		b := make([]uint16, d.ColumnSize())
+		p.Data = b
+		buf = unsafe.Pointer(&b[0])
+		size = api.SQLULEN(d.ColumnSize())
+		buflen = api.SQLLEN(d.ColumnSize() * 2)
+		sqltype = api.SQL_WCHAR
+		plen = p.StoreStrLen_or_IndPtr(buflen)
+
+		inout = api.SQL_PARAM_OUTPUT
+	case OutputBind[int]:
+		var v int64
+		ctype = api.SQL_C_SBIGINT
+		p.Data = &v
+		buf = unsafe.Pointer(&v)
+		sqltype = api.SQL_BIGINT
+		size = 8
+		inout = api.SQL_PARAM_OUTPUT
 	case int64:
 		if -0x80000000 < d && d < 0x7fffffff {
 			// Some ODBC drivers do not support SQL_BIGINT.
@@ -160,7 +180,7 @@ func (p *Parameter) BindValue(h api.SQLHSTMT, idx int, v driver.Value, conn *Con
 		return fmt.Errorf("unsupported type %T", v)
 	}
 	ret := api.SQLBindParameter(h, api.SQLUSMALLINT(idx+1),
-		api.SQL_PARAM_INPUT, ctype, sqltype, size, decimal,
+		inout, ctype, sqltype, size, decimal,
 		api.SQLPOINTER(buf), buflen, plen)
 	if IsError(ret) {
 		return NewError("SQLBindParameter", h)
